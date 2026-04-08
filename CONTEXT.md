@@ -7,20 +7,22 @@ load: first
 
 **What this is:** Founding manifesto for GitMind — infrastructure for version-controlled, reasoning-anchored knowledge collaboration. "GitHub for thought."
 
-**Core argument in one sentence:** AI produces intelligence faster than humans can structure it; GitMind closes this gap by anchoring every document sentence to the reasoning chain that produced it, then enabling GitHub-style forking and merging of *reasoning*, not just text.
+**Core argument in one sentence:** Thinkers are working on the same problems in parallel, invisibly, with no shared infrastructure — because the transition from thinking to shareable knowledge is so costly that the loop never closes; GitMind eliminates this friction by anchoring every document sentence to the reasoning chain that produced it, then enabling GitHub-style forking and merging of *reasoning*, not just text.
 
 **Three problems addressed:**
-1. **Synthesis** — LLM chat output has no structure for collaboration; thinking stays locked in chat windows
-2. **Dimensionality** — current docs expose surface conclusions, not the reasoning behind them
+1. **Synthesis / Transition Tax** — Chat output stays locked in chat windows because converting it into a shareable, structured knowledge artifact carries a prohibitively high transition tax; there is no functioning loop between thinking and documenting
+2. **Dimensionality** — Documents are flat surfaces read top to bottom; unlike GitHub (where you navigate into context), docs expose only surface conclusions — the reasoning behind them is invisible
 3. **Merge** — no mechanism exists to reconcile two independent reasoning chains without losing what either discovered
 
 **Key concepts to know:**
+- **Transition Tax** — the cost of moving from thinking (chat) to a shareable, structured knowledge artifact; currently high enough that the loop rarely closes
+- **The Loop** — the cycle of thinking → document → thinking → document; GitMind makes this frictionless so a document can be thought into existence
 - **Reasoning Anchor** — every sentence in a document links back to the exact chat moment that produced it
 - **Knowledge Graph** — emerges as a byproduct; every insight and question becomes a queryable node
 - **Fork / Reasoning Merge** — collaborators fork the full reasoning environment, not just the text; merges are validated for semantic coherence, not just textual compatibility
 - **Semantic Coherence** — the "compiles" check for knowledge: does the new reasoning integrate without contradiction?
-- **Mind-to-Mind** — the vision: multiple humans and AI agents thinking together in a shared, version-controlled reasoning space
-- **Discovery Problem** — finding collaborators not by their conclusions but by their reasoning trajectories (Lagrangian coherent structures metaphor)
+- **Mind-to-Mind** — the vision: thinkers finding each other and collaborating at the speed of thought, with AI as infrastructure not as the primary collaborator
+- **Discovery Problem** — finding collaborators not by their conclusions but by their current research trajectory (Lagrangian coherent structures metaphor)
 
 **How to navigate this document:**
 - Read `INDEX.md` for the full section map with one-line summaries
