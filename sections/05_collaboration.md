@@ -5,7 +5,7 @@
 
 ---
 
-To manage the complexity of this multidimensional space, GitMind adopts the logic of open source software development as we know it from GitHub. In code, collaboration is efficient because it is version-controlled and verifiable; GitMind brings this same rigor to human + AI thought.
+To manage the complexity of this multidimensional space, GitMind adopts the logic of open source software development as we know it from GitHub. In code, collaboration is efficient because it is version-controlled and verifiable; GitMind brings this same rigor to knowledge collaboration between thinkers — with AI serving as infrastructure, not as the primary participant.
 
 ---
 
@@ -60,6 +60,6 @@ This process transforms the merge into a high-fidelity exploration of the "Why."
 
 ---
 
-This is how knowledge work finally achieves the **Speed of Thought** — the rapid, iterative pace of a solo LLM session, now scaled across a global ecosystem of Humans and AI. We are moving beyond "Working Together" toward "Thinking Together" within a shared, version-controlled reality.
+This is how knowledge work finally achieves the **Speed of Thought** — collaboration between thinkers that no longer requires the slow, lossy handoffs of documents and emails. The Transition Tax drops to near zero. We are moving beyond "Working Together" toward "Thinking Together" within a shared, version-controlled reality — thinkers finding each other at the exact point of productive friction, contributing precisely where their reasoning has something to add.
 
 This is beyond networking, citation, or commenting on a shared document. It is what GitHub made possible for code — now made possible for thought. Fork a reasoning path. Propose a merge. Contribute precisely where you have something to contribute. The infrastructure for collective reasoning already exists as a model. What was missing was the vessel that makes reasoning composable in the first place.
