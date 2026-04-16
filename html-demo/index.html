@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitMind — GitHub for Thought</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0d14;
+      --bg-alt:    #111118;
+      --surface:   rgba(255,255,255,0.04);
+      --border:    rgba(255,255,255,0.08);
+      --accent:    #61aaff;
+      --accent-dim: rgba(97,170,255,0.12);
+      --text:      #ffffff;
+      --text-muted: rgba(255,255,255,0.45);
+      --text-body: rgba(255,255,255,0.62);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      padding: 0 80px;
+      height: 68px;
+      background: rgba(13,13,20,0.75);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.3s;
+    }
+
+    .nav-logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      margin-left: auto;
+      margin-right: 40px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 14px;
+      color: var(--text-body);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 18px;
+      background: var(--accent);
+      color: var(--bg);
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .nav-cta:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    /* ── SECTIONS ── */
+    section {
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 140px 80px;
+    }
+
+    .section-full {
+      max-width: 100%;
+      background: var(--bg-alt);
+    }
+
+    .section-full > .inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 140px 80px;
+    }
+
+    /* ── LABELS ── */
+    .label {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    /* ── HERO ── */
+    #hero {
+      padding-top: 200px;
+      padding-bottom: 160px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 100px;
+      border: 1px solid rgba(97,170,255,0.28);
+      background: rgba(97,170,255,0.08);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 36px;
+    }
+
+    .hero-tag::before {
+      content: "";
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    h1 {
+      font-size: clamp(56px, 6vw, 88px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      margin-bottom: 28px;
+      background: linear-gradient(160deg, #fff 40%, rgba(255,255,255,0.55));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 20px;
+      line-height: 1.65;
+      color: var(--text-body);
+      max-width: 580px;
+      margin-bottom: 48px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      padding: 16px 32px;
+      background: var(--accent);
+      color: var(--bg);
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 0 0 0 rgba(97,170,255,0.4);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(97,170,255,0.25);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      padding: 16px 32px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.11);
+      color: rgba(255,255,255,0.82);
+      font-size: 15px;
+      font-weight: 500;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.09);
+      transform: translateY(-2px);
+    }
+
+    /* ── PROBLEMS ── */
+    #problems { text-align: center; }
+
+    #problems h2 {
+      font-size: clamp(32px, 4vw, 48px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 64px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      text-align: left;
+    }
+
+    .card {
+      padding: 40px 36px;
+      border-radius: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      transition: background 0.25s, border-color 0.25s, transform 0.2s, box-shadow 0.25s;
+      cursor: default;
+    }
+
+    .card:hover {
+      background: rgba(255,255,255,0.07);
+      border-color: rgba(97,170,255,0.22);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .card-num {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: rgba(97,170,255,0.55);
+      margin-bottom: 20px;
+    }
+
+    .card h3 {
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .card p {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text-body);
+    }
+
+    /* ── SOLUTION ── */
+    #solution { text-align: center; }
+
+    #solution h2 {
+      font-size: clamp(36px, 4.5vw, 56px);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+
+    #solution .section-sub {
+      font-size: 18px;
+      color: var(--text-body);
+      max-width: 540px;
+      margin: 0 auto 72px;
+      line-height: 1.65;
+    }
+
+    .concepts {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .concept {
+      padding: 44px 40px;
+      border-right: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    .concept:last-child { border-right: none; }
+
+    .concept:hover { background: rgba(255,255,255,0.03); }
+
+    .concept-icon {
+      font-size: 26px;
+      margin-bottom: 20px;
+      display: block;
+      color: var(--accent);
+    }
+
+    .concept h3 {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+    }
+
+    .concept p {
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--text-body);
+    }
+
+    /* ── VISION ── */
+    #vision {
+      text-align: center;
+    }
+
+    .vision-inner {
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    blockquote {
+      font-size: clamp(32px, 4vw, 52px);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
+      margin-bottom: 28px;
+      background: linear-gradient(160deg, #fff 50%, rgba(255,255,255,0.45));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .vision-body {
+      font-size: 18px;
+      line-height: 1.7;
+      color: var(--text-body);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ── CTA ── */
+    #cta {
+      text-align: center;
+    }
+
+    #cta h2 {
+      font-size: clamp(36px, 4.5vw, 56px);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+      margin-bottom: 20px;
+    }
+
+    #cta p {
+      font-size: 18px;
+      color: var(--text-body);
+      max-width: 560px;
+      margin: 0 auto 44px;
+      line-height: 1.65;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      display: flex;
+      align-items: center;
+      padding: 28px 80px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .footer-logo {
+      font-size: 15px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .footer-meta {
+      margin-left: auto;
+      font-size: 13px;
+      color: rgba(255,255,255,0.28);
+    }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.65s cubic-bezier(.16,1,.3,1), transform 0.65s cubic-bezier(.16,1,.3,1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+
+    /* ── GLOW BG ── */
+    .hero-glow {
+      position: fixed;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 600px;
+      background: radial-gradient(ellipse at center, rgba(97,170,255,0.07) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #hero { position: relative; z-index: 1; }
+
+    @media (max-width: 900px) {
+      nav { padding: 0 24px; }
+      nav .nav-links { display: none; }
+      section, .section-full > .inner { padding: 80px 24px; }
+      #hero { padding-top: 140px; }
+      .cards, .concepts { grid-template-columns: 1fr; }
+      .concept { border-right: none; border-bottom: 1px solid var(--border); }
+      footer { padding: 24px; flex-direction: column; gap: 8px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="hero-glow"></div>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#hero">GitMind</a>
+  <ul class="nav-links">
+    <li><a href="#problems">Problems</a></li>
+    <li><a href="#solution">Solution</a></li>
+    <li><a href="#vision">Vision</a></li>
+    <li><a href="#cta">Contribute</a></li>
+  </ul>
+  <a class="nav-cta" href="https://github.com/FlorianUhlmann/demo-git-mind" target="_blank">Star on GitHub</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-tag">Open Source &nbsp;·&nbsp; v0.1.0</div>
+
+  <h1>GitHub for Thought.</h1>
+
+  <p class="hero-sub">
+    Version-controlled, reasoning-anchored knowledge collaboration.<br>
+    Your thinking deserves infrastructure.
+  </p>
+
+  <div class="btn-row">
+    <a class="btn-primary" href="#problems">Read the Manifesto</a>
+    <a class="btn-secondary" href="https://github.com/FlorianUhlmann/demo-git-mind" target="_blank">Contribute on GitHub →</a>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PROBLEMS -->
+<div class="section-full" id="problems">
+  <div class="inner">
+    <p class="label reveal">The Problem</p>
+    <h2 class="reveal reveal-delay-1">Three problems. No solutions.<br>Until now.</h2>
+
+    <div class="cards">
+      <div class="card reveal reveal-delay-1">
+        <div class="card-num">01</div>
+        <h3>The Transition Tax</h3>
+        <p>Your best thinking happens in conversation. It stays there. Moving it into a shareable format costs more than most people are willing to pay. The loop never closes.</p>
+      </div>
+      <div class="card reveal reveal-delay-2">
+        <div class="card-num">02</div>
+        <h3>The Dimensionality Problem</h3>
+        <p>You spent three hours thinking through a hard problem. A collaborator gets the last paragraph. Documents are flat. You read them top to bottom. You cannot enter the thought.</p>
+      </div>
+      <div class="card reveal reveal-delay-3">
+        <div class="card-num">03</div>
+        <h3>The Merge Problem</h3>
+        <p>Two people work on the same problem in parallel. Both make real progress. Then they try to combine it. You can merge text. You cannot merge reasoning.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SOLUTION -->
+<section id="solution">
+  <p class="label reveal">The Solution</p>
+  <h2 class="reveal reveal-delay-1">Think the document<br>into existence.</h2>
+  <p class="section-sub reveal reveal-delay-2">A closed loop between thinking and documenting. Every sentence anchored to the reasoning that created it.</p>
+
+  <div class="concepts reveal reveal-delay-1">
+    <div class="concept">
+      <span class="concept-icon">⚓</span>
+      <h3>Reasoning Anchor</h3>
+      <p>Every sentence in a document links back to the exact chat moment that produced it. The document is a portal back into the thought.</p>
+    </div>
+    <div class="concept">
+      <span class="concept-icon">◈</span>
+      <h3>Knowledge Graph</h3>
+      <p>Emerges as a byproduct. Every insight and question becomes a queryable node. The chat becomes an interface to everything the project has ever known.</p>
+    </div>
+    <div class="concept">
+      <span class="concept-icon">⑂</span>
+      <h3>Reasoning Merge</h3>
+      <p>Fork the full reasoning environment, not just the text. Merges are validated for semantic coherence. Two chains of thought become one — without losing either.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- VISION -->
+<div class="section-full" id="vision">
+  <div class="inner">
+    <div class="vision-inner">
+      <p class="label reveal">The Vision</p>
+      <blockquote class="reveal reveal-delay-1">
+        Not networking. Not citation.<br>Actual epistemic contact.
+      </blockquote>
+      <p class="vision-body reveal reveal-delay-2">
+        Two reasoning chains finding each other at the exact point of productive friction.
+        Contribute precisely where your thinking has something to add.
+        Collaboration at the speed of thought.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<section id="cta">
+  <p class="label reveal">Get Involved</p>
+  <h2 class="reveal reveal-delay-1">The infrastructure for thought<br>is being built right now.</h2>
+  <p class="reveal reveal-delay-2">Fork a reasoning path. Propose a merge. Contribute where you have something to add. The community is small — your thinking matters.</p>
+  <div class="btn-row reveal reveal-delay-3">
+    <a class="btn-primary" href="https://github.com/FlorianUhlmann/demo-git-mind" target="_blank">View on GitHub →</a>
+    <a class="btn-secondary" href="https://github.com/FlorianUhlmann/demo-git-mind/blob/main/CONTRIBUTING.md" target="_blank">How to Contribute</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo">GitMind</span>
+  <span class="footer-meta">Open Source &nbsp;·&nbsp; MIT License &nbsp;·&nbsp; v0.1.0</span>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add("visible");
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll(".reveal").forEach(el => observer.observe(el));
+
+  // Nav background on scroll
+  const nav = document.querySelector("nav");
+  window.addEventListener("scroll", () => {
+    nav.style.background = window.scrollY > 20
+      ? "rgba(13,13,20,0.92)"
+      : "rgba(13,13,20,0.75)";
+  });
+
+  // Hero elements instant visible
+  document.querySelectorAll("#hero .reveal").forEach(el => el.classList.add("visible"));
+</script>
+
+</body>
+</html>

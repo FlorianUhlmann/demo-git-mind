@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitMind — Merge Workspace</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0d14;
+      --bg-alt:    #111118;
+      --surface:   rgba(255,255,255,0.04);
+      --surface-2: rgba(255,255,255,0.065);
+      --border:    rgba(255,255,255,0.08);
+      --border-2:  rgba(255,255,255,0.13);
+      --accent:    #61aaff;
+      --accent-dim: rgba(97,170,255,0.1);
+      --accent-border: rgba(97,170,255,0.28);
+      --green:     #4ade80;
+      --green-dim: rgba(74,222,128,0.07);
+      --green-border: rgba(74,222,128,0.22);
+      --orange:    #fb923c;
+      --orange-dim: rgba(251,146,60,0.08);
+      --orange-border: rgba(251,146,60,0.22);
+      --yellow:    #fbbf24;
+      --yellow-dim: rgba(251,191,36,0.07);
+      --yellow-border: rgba(251,191,36,0.22);
+      --purple:    #a78bfa;
+      --text:      #ffffff;
+      --text-muted: rgba(255,255,255,0.35);
+      --text-body: rgba(255,255,255,0.62);
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── NAV ── */
+    nav {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      height: 52px;
+      background: rgba(13,13,20,0.94);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      gap: 10px;
+    }
+
+    .nav-logo {
+      font-size: 15px; font-weight: 700; letter-spacing: -0.4px;
+      color: var(--text); text-decoration: none;
+    }
+
+    .nav-sep { color: var(--text-muted); font-weight: 300; font-size: 16px; }
+
+    .branch-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 5px;
+      font-size: 11.5px; font-weight: 500;
+    }
+
+    .branch-chip.from {
+      background: var(--orange-dim); border: 1px solid var(--orange-border); color: var(--orange);
+    }
+
+    .branch-chip.to {
+      background: var(--green-dim); border: 1px solid var(--green-border); color: var(--green);
+    }
+
+    .nav-arrow { color: var(--text-muted); font-size: 13px; }
+    .spacer { flex: 1; }
+
+    .nav-status {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--yellow); animation: pulse 2.5s infinite;
+    }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+    .btn-merge {
+      padding: 6px 14px; background: var(--accent); color: var(--bg);
+      font-size: 12.5px; font-weight: 600; border-radius: 7px; border: none;
+      cursor: pointer; transition: opacity .2s, transform .15s; margin-left: 6px;
+    }
+    .btn-merge:hover { opacity: .88; transform: translateY(-1px); }
+
+    /* ── MERGE BAR ── */
+    .merge-bar {
+      flex-shrink: 0;
+      display: flex; align-items: center;
+      padding: 0 20px; height: 40px;
+      background: var(--bg-alt); border-bottom: 1px solid var(--border);
+      gap: 18px; font-size: 11.5px;
+    }
+
+    .stat { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); }
+    .stat-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .stat-dot.accepted { background: var(--green); }
+    .stat-dot.pending  { background: var(--yellow); }
+    .stat-dot.unchanged{ background: rgba(255,255,255,0.18); }
+
+    .merge-hint { margin-left: auto; font-size: 11px; color: var(--text-muted); }
+
+    /* ── WORKSPACE ── */
+    .workspace { flex: 1; display: flex; overflow: hidden; min-height: 0; }
+
+    .pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    .pane.master { border-right: 1px solid var(--border); }
+
+    .pane-header {
+      flex-shrink: 0; display: flex; align-items: center;
+      padding: 0 20px; height: 38px;
+      background: var(--bg-alt); border-bottom: 1px solid var(--border);
+      gap: 10px; font-size: 11.5px;
+    }
+
+    .pane-label { font-weight: 600; color: var(--text-body); }
+
+    .pane-badge {
+      padding: 2px 7px; border-radius: 4px; font-size: 10.5px; font-weight: 500;
+    }
+
+    .master .pane-badge {
+      background: var(--green-dim); border: 1px solid var(--green-border); color: var(--green);
+    }
+
+    .fork .pane-badge {
+      background: var(--orange-dim); border: 1px solid var(--orange-border); color: var(--orange);
+    }
+
+    .pane-scroll { flex: 1; overflow-y: auto; padding: 28px 28px 28px 48px; }
+    .pane-scroll::-webkit-scrollbar { width: 4px; }
+    .pane-scroll::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 20px;
+    }
+
+    /* ── PARAGRAPHS ── */
+    .para {
+      position: relative; padding: 14px 16px; border-radius: 9px;
+      border: 1px solid transparent; margin-bottom: 10px;
+      font-size: 13.5px; line-height: 1.82; color: var(--text-body);
+      transition: background .2s, border-color .2s;
+    }
+
+    .para-num {
+      position: absolute; top: 15px; left: -28px;
+      font-size: 9.5px; font-weight: 700; color: var(--text-muted); letter-spacing: .05em;
+    }
+
+    .master .para { cursor: pointer; }
+    .master .para:hover { background: var(--surface); border-color: var(--border-2); }
+    .master .para.active { background: var(--accent-dim); border-color: var(--accent-border); }
+
+    /* fork states */
+    .para.unchanged { color: var(--text-body); }
+    .para.accepted  { background: var(--green-dim); border-color: var(--green-border); }
+    .para.pending   { background: var(--yellow-dim); border-color: var(--yellow-border); }
+    .para.editing   { background: var(--accent-dim); border-color: var(--accent-border); }
+
+    .state-tag {
+      display: block; font-size: 9.5px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; margin-bottom: 7px;
+    }
+
+    .para.unchanged .state-tag { color: var(--text-muted); }
+    .para.accepted  .state-tag { color: var(--green); }
+    .para.pending   .state-tag { color: var(--yellow); }
+    .para.editing   .state-tag { color: var(--accent); }
+
+    .para-textarea {
+      width: 100%; background: transparent; border: none; outline: none;
+      color: var(--text); font-family: inherit; font-size: 13.5px;
+      line-height: 1.82; resize: none; min-height: 72px;
+    }
+
+    .para-actions { display: flex; gap: 7px; margin-top: 10px; }
+
+    .btn-sm {
+      padding: 4px 11px; font-size: 11.5px; font-weight: 500;
+      border-radius: 6px; border: none; cursor: pointer; transition: opacity .15s;
+    }
+
+    .btn-commit  { background: var(--green); color: #000; }
+    .btn-discard { background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border-2); }
+    .btn-accept  { background: var(--green); color: #000; }
+    .btn-edit    { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
+    .btn-sm:hover { opacity: .82; }
+
+    /* ── BOTTOM PANEL ── */
+    .bottom-panel {
+      flex-shrink: 0; height: 295px;
+      display: flex; flex-direction: column;
+      border-top: 1px solid var(--border); background: var(--bg-alt);
+    }
+
+    .panel-tabs {
+      flex-shrink: 0; display: flex; align-items: center;
+      height: 38px; border-bottom: 1px solid var(--border); padding: 0 14px; gap: 4px;
+    }
+
+    .ptab {
+      padding: 4px 13px; border-radius: 5px; font-size: 11.5px; font-weight: 500;
+      color: var(--text-muted); background: none; border: none; cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+
+    .ptab.active { background: var(--surface-2); color: var(--text); }
+    .ptab:hover:not(.active) { background: var(--surface); color: var(--text-body); }
+
+    /* ── MIND SELECTOR ── */
+    .mind-row {
+      flex-shrink: 0; display: flex; align-items: center; gap: 7px;
+      padding: 8px 14px; border-bottom: 1px solid var(--border);
+    }
+
+    .mind-label { font-size: 10.5px; color: var(--text-muted); margin-right: 2px; }
+
+    .mbtn {
+      padding: 3px 11px; border-radius: 20px; font-size: 10.5px; font-weight: 500;
+      border: 1px solid var(--border-2); background: none; color: var(--text-muted);
+      cursor: pointer; transition: all .15s;
+    }
+
+    .mbtn:hover { color: var(--text-body); background: var(--surface); }
+
+    .mbtn.active[data-mind="assembler"] {
+      background: var(--accent-dim); border-color: var(--accent-border); color: var(--accent);
+    }
+    .mbtn.active[data-mind="mind-a"] {
+      background: var(--green-dim); border-color: var(--green-border); color: var(--green);
+    }
+    .mbtn.active[data-mind="mind-b"] {
+      background: var(--orange-dim); border-color: var(--orange-border); color: var(--orange);
+    }
+
+    /* ── TAB CONTENT ── */
+    .tcontent { display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0; }
+    .tcontent.active { display: flex; }
+
+    /* ── CHAT ── */
+    .chat-msgs {
+      flex: 1; overflow-y: auto; padding: 10px 14px;
+      display: flex; flex-direction: column; gap: 9px;
+    }
+
+    .chat-msgs::-webkit-scrollbar { width: 3px; }
+    .chat-msgs::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+    .msg { display: flex; gap: 9px; align-items: flex-start; }
+
+    .avatar {
+      flex-shrink: 0; width: 24px; height: 24px; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; letter-spacing: .02em;
+    }
+
+    .avatar.assembler { background: var(--accent-dim); border: 1px solid var(--accent-border); color: var(--accent); }
+    .avatar.mind-a    { background: var(--green-dim);  border: 1px solid var(--green-border);  color: var(--green); }
+    .avatar.mind-b    { background: var(--orange-dim); border: 1px solid var(--orange-border); color: var(--orange); }
+    .avatar.user      { background: var(--surface-2);  border: 1px solid var(--border-2);       color: var(--text-muted); }
+
+    .msg-body { flex: 1; min-width: 0; }
+
+    .msg-sender { font-size: 10.5px; font-weight: 600; margin-bottom: 2px; }
+    .msg-sender.assembler { color: var(--accent); }
+    .msg-sender.mind-a    { color: var(--green); }
+    .msg-sender.mind-b    { color: var(--orange); }
+    .msg-sender.user      { color: var(--text-muted); }
+
+    .msg-text { font-size: 12.5px; line-height: 1.72; color: var(--text-body); }
+    .msg-text em { font-style: italic; color: var(--text-muted); }
+
+    .msg-ref {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 7px; border-radius: 4px; font-size: 10.5px;
+      background: var(--accent-dim); border: 1px solid var(--accent-border);
+      color: var(--accent); cursor: pointer; margin-top: 5px;
+    }
+
+    .msg-ref:hover { background: rgba(97,170,255,0.16); }
+
+    .typing {
+      display: none; padding: 4px 0;
+    }
+
+    .typing.visible { display: flex; align-items: center; gap: 4px; }
+
+    .typing span {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--text-muted); animation: bounce 1.2s infinite;
+    }
+
+    .typing span:nth-child(2) { animation-delay: .2s; }
+    .typing span:nth-child(3) { animation-delay: .4s; }
+
+    @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-5px)} }
+
+    .chat-input-row {
+      flex-shrink: 0; display: flex; align-items: center; gap: 7px;
+      padding: 8px 14px; border-top: 1px solid var(--border);
+    }
+
+    .chat-input {
+      flex: 1; background: var(--surface-2); border: 1px solid var(--border-2);
+      border-radius: 7px; padding: 6px 11px; font-size: 12.5px; color: var(--text);
+      font-family: inherit; outline: none; transition: border-color .2s;
+    }
+
+    .chat-input:focus { border-color: var(--accent-border); }
+    .chat-input::placeholder { color: var(--text-muted); }
+
+    .btn-send {
+      padding: 6px 13px; background: var(--accent); color: var(--bg);
+      font-size: 12px; font-weight: 600; border-radius: 6px; border: none;
+      cursor: pointer; transition: opacity .15s;
+    }
+
+    .btn-send:hover { opacity: .85; }
+
+    /* ── GRAPH ── */
+    .graph-wrap {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+
+    #kg { width: 100%; height: 100%; }
+
+    .gnode { cursor: pointer; }
+    .gnode circle { transition: opacity .2s; }
+    .gnode:hover circle { opacity: .75; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 22px; right: 22px;
+      padding: 9px 16px; border-radius: 7px; font-size: 12.5px; font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+      transform: translateY(16px); opacity: 0;
+      transition: transform .28s cubic-bezier(.16,1,.3,1), opacity .28s;
+      pointer-events: none; z-index: 999;
+    }
+
+    .toast.ok  { background: var(--green); color: #000; }
+    .toast.err { background: #ef4444; color: #fff; }
+    .toast.show { transform: none; opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="index.html">GitMind</a>
+  <span class="nav-sep">/</span>
+  <span style="font-size:12px;color:var(--text-muted)">Merge Workspace</span>
+  <span class="nav-sep" style="margin:0 2px">·</span>
+  <span class="branch-chip from">⑂ conceptual-sharpening-v0.2</span>
+  <span class="nav-arrow">→</span>
+  <span class="branch-chip to">main · Chef</span>
+  <span class="spacer"></span>
+  <div class="nav-status">
+    <span class="status-dot"></span>
+    <span id="navStatus">2 improvements · 1 pending</span>
+  </div>
+  <button class="btn-merge" id="btnMerge">Propose Merge</button>
+</nav>
+
+<!-- MERGE BAR -->
+<div class="merge-bar">
+  <span class="stat"><span class="stat-dot accepted"></span><span id="cntAccepted">1 accepted</span></span>
+  <span class="stat"><span class="stat-dot pending"></span><span id="cntPending">1 pending</span></span>
+  <span class="stat"><span class="stat-dot unchanged"></span><span id="cntUnchanged">3 unchanged</span></span>
+  <span class="merge-hint">Click any paragraph on the left to propose an improvement</span>
+</div>
+
+<!-- WORKSPACE -->
+<div class="workspace">
+
+  <!-- MASTER -->
+  <div class="pane master">
+    <div class="pane-header">
+      <span class="pane-label">Chef's Document · Master</span>
+      <span class="pane-badge">main</span>
+    </div>
+    <div class="pane-scroll">
+      <div style="position:relative;padding-left:8px">
+        <div class="section-label">The Merge Workspace — Reasoning</div>
+
+        <div class="para" data-i="0" id="m0">
+          <span class="para-num">P1</span>
+          When a collaborator joins, they don't just "open a file." They <strong style="color:var(--text)">Fork the Environment</strong>. This gives them a private copy of the document and its entire background history. They can start their own chat-led exploration and test new hypotheses in a parallel branch — without affecting the master version.
+        </div>
+
+        <div class="para" data-i="1" id="m1">
+          <span class="para-num">P2</span>
+          When a collaborator proposes an update, they don't just suggest new text; they propose a <strong style="color:var(--text)">Reasoning Merge</strong>. The Reasoning Merge happens in a workspace where the Master Document and the Forked Branch are compared and analyzed side-by-side. In the bottom you find a chat interface — a portal to two distinct minds that you, the project owner, can interact with to determine the most meaningful synthesis.
+        </div>
+
+        <div class="para" data-i="2" id="m2">
+          <span class="para-num">P3</span>
+          Behind the scenes, AI agents act as a proxy for two separate histories: <strong style="color:var(--text)">Mind A (The Master)</strong> — the embodiment of the current document's memory, holding every piece of evidence and reasoning used to build the existing version. <strong style="color:var(--text)">Mind B (The Branch)</strong> — holding the specific research, new logic, and breakthroughs that justify the proposed changes.
+        </div>
+
+        <div class="para" data-i="3" id="m3">
+          <span class="para-num">P4</span>
+          When you open the Merge Workspace, an <strong style="color:var(--text)">Assembler</strong> sits as a "Synthesis Layer" within the chat. You don't just talk to Mind A or Mind B; you ask the Assembler to map the terrain. <em style="color:var(--text-muted)">"Assembler, where is the friction?"</em> — it highlights the specific sentences where the two reasoning chains fundamentally disagree.
+        </div>
+
+        <div class="para" data-i="4" id="m4">
+          <span class="para-num">P5</span>
+          This process transforms the merge into a high-fidelity exploration of the "Why." You can challenge new research, defend the original logic, or discover a third, superior path that neither side had seen in isolation. The merge only occurs once the reasoning "compiles" — meaning the new text and its underlying logic are fully reconciled and integrated into the master graph.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORK -->
+  <div class="pane fork">
+    <div class="pane-header">
+      <span class="pane-label">Your Fork · Improvements</span>
+      <span class="pane-badge">conceptual-sharpening-v0.2</span>
+    </div>
+    <div class="pane-scroll" id="forkScroll">
+      <div style="position:relative;padding-left:8px" id="forkDoc">
+        <div class="section-label">The Merge Workspace — Fork</div>
+        <!-- rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM PANEL -->
+<div class="bottom-panel">
+  <div class="panel-tabs">
+    <button class="ptab active" data-tab="chat">Chat · Assembler</button>
+    <button class="ptab" data-tab="graph">Knowledge Graph</button>
+  </div>
+
+  <!-- CHAT -->
+  <div class="tcontent active" id="tab-chat">
+    <div class="mind-row">
+      <span class="mind-label">Talk to:</span>
+      <button class="mbtn active" data-mind="assembler">Assembler</button>
+      <button class="mbtn" data-mind="mind-a">Mind A — Chef</button>
+      <button class="mbtn" data-mind="mind-b">Mind B — Fork</button>
+    </div>
+    <div class="chat-msgs" id="chatMsgs">
+      <div class="msg">
+        <div class="avatar assembler">AS</div>
+        <div class="msg-body">
+          <div class="msg-sender assembler">Assembler</div>
+          <div class="msg-text">I've mapped both branches. Your fork introduces 2 improvements in the Reasoning Merge section. The key semantic shift is in <strong>Paragraph 2</strong>: you've reframed the workspace from a "comparison tool" to a "cognitive handoff environment." This adds meaningful precision — it names what is actually being transferred between collaborators.</div>
+          <div class="msg-ref" onclick="activatePara(1)">⚓ Jump to P2 · Reasoning Merge</div>
+        </div>
+      </div>
+      <div class="msg">
+        <div class="avatar user">You</div>
+        <div class="msg-body">
+          <div class="msg-sender user">You</div>
+          <div class="msg-text">Why did the Chef use "distinct minds" specifically?</div>
+        </div>
+      </div>
+      <div class="msg">
+        <div class="avatar mind-a">MA</div>
+        <div class="msg-body">
+          <div class="msg-sender mind-a">Mind A — Chef</div>
+          <div class="msg-text">The phrase was deliberate — not metaphor, but architecture. Each mind is a fully instantiated reasoning agent with its own evidentiary history. "Distinct" signals these are not summaries or abstracts; they are complete cognitive environments. Using "minds" rather than "models" or "agents" emphasizes that the object of collaboration is <em>the reasoning itself</em>, not the text it produced.</div>
+          <div class="msg-ref" onclick="activatePara(2)">⚓ P3 · Mind A & Mind B definition</div>
+        </div>
+      </div>
+    </div>
+    <div class="typing" id="typing" style="padding:0 14px">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chatInput" type="text"
+        placeholder="Ask the Assembler — 'Where is the friction?', 'Draft a synthesis for P4'…" />
+      <button class="btn-send" id="btnSend">Send</button>
+    </div>
+  </div>
+
+  <!-- GRAPH -->
+  <div class="tcontent" id="tab-graph">
+    <div class="graph-wrap">
+      <svg id="kg" viewBox="0 0 820 228" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- edges -->
+        <g stroke="rgba(255,255,255,0.07)" stroke-width="1.2" fill="none">
+          <path d="M410,52 Q260,78 175,112"/>
+          <path d="M410,52 Q560,78 645,112"/>
+          <path d="M410,52 L410,102"/>
+          <path d="M175,112 L410,112"/>
+          <path d="M410,112 L645,112"/>
+          <path d="M175,112 L255,172"/>
+          <path d="M645,112 L565,172"/>
+          <path d="M410,112 L255,172"/>
+          <path d="M410,112 L565,172"/>
+          <path d="M410,112 L410,180"/>
+          <path d="M255,172 L410,188"/>
+          <path d="M565,172 L410,188"/>
+        </g>
+
+        <!-- Assembler -->
+        <g class="gnode" onclick="switchMind('assembler')">
+          <circle cx="410" cy="44" r="34" fill="rgba(97,170,255,0.1)" stroke="rgba(97,170,255,0.32)" stroke-width="1.5" filter="url(#glow)"/>
+          <text x="410" y="39" text-anchor="middle" fill="#61aaff" font-size="8.5" font-weight="700" letter-spacing=".06em">ASSEMBLER</text>
+          <text x="410" y="52" text-anchor="middle" fill="rgba(97,170,255,0.55)" font-size="7.5">Synthesis Layer</text>
+        </g>
+
+        <!-- Mind A -->
+        <g class="gnode" onclick="switchMind('mind-a')">
+          <circle cx="175" cy="112" r="30" fill="rgba(74,222,128,0.09)" stroke="rgba(74,222,128,0.28)" stroke-width="1.5"/>
+          <text x="175" y="108" text-anchor="middle" fill="#4ade80" font-size="8.5" font-weight="700">MIND A</text>
+          <text x="175" y="120" text-anchor="middle" fill="rgba(74,222,128,0.55)" font-size="7.5">Chef · Master</text>
+        </g>
+
+        <!-- Reasoning Merge -->
+        <g class="gnode">
+          <circle cx="410" cy="112" r="32" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.17)" stroke-width="1.5"/>
+          <text x="410" y="108" text-anchor="middle" fill="rgba(255,255,255,0.85)" font-size="8" font-weight="700">REASONING</text>
+          <text x="410" y="119" text-anchor="middle" fill="rgba(255,255,255,0.85)" font-size="8" font-weight="700">MERGE</text>
+        </g>
+
+        <!-- Mind B -->
+        <g class="gnode" onclick="switchMind('mind-b')">
+          <circle cx="645" cy="112" r="30" fill="rgba(251,146,60,0.09)" stroke="rgba(251,146,60,0.28)" stroke-width="1.5"/>
+          <text x="645" y="108" text-anchor="middle" fill="#fb923c" font-size="8.5" font-weight="700">MIND B</text>
+          <text x="645" y="120" text-anchor="middle" fill="rgba(251,146,60,0.55)" font-size="7.5">Fork · Branch</text>
+        </g>
+
+        <!-- Master doc -->
+        <g class="gnode" onclick="switchMind('mind-a')">
+          <circle cx="255" cy="172" r="24" fill="rgba(74,222,128,0.07)" stroke="rgba(74,222,128,0.2)" stroke-width="1.2"/>
+          <text x="255" y="169" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600">MASTER</text>
+          <text x="255" y="179" text-anchor="middle" fill="rgba(74,222,128,0.45)" font-size="7">Document</text>
+        </g>
+
+        <!-- Semantic Coherence -->
+        <g class="gnode">
+          <circle cx="410" cy="192" r="26" fill="rgba(167,139,250,0.09)" stroke="rgba(167,139,250,0.25)" stroke-width="1.2"/>
+          <text x="410" y="188" text-anchor="middle" fill="#a78bfa" font-size="7.5" font-weight="700">SEMANTIC</text>
+          <text x="410" y="198" text-anchor="middle" fill="#a78bfa" font-size="7.5" font-weight="700">COHERENCE</text>
+        </g>
+
+        <!-- Fork -->
+        <g class="gnode" onclick="switchMind('mind-b')">
+          <circle cx="565" cy="172" r="24" fill="rgba(251,146,60,0.07)" stroke="rgba(251,146,60,0.2)" stroke-width="1.2"/>
+          <text x="565" y="169" text-anchor="middle" fill="#fb923c" font-size="8" font-weight="600">FORK</text>
+          <text x="565" y="179" text-anchor="middle" fill="rgba(251,146,60,0.45)" font-size="7">Branch</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── DATA ──
+
+  const ORIG = [
+    `When a collaborator joins, they don't just "open a file." They Fork the Environment. This gives them a private copy of the document and its entire background history. They can start their own chat-led exploration and test new hypotheses in a parallel branch — without affecting the master version.`,
+    `When a collaborator proposes an update, they don't just suggest new text; they propose a Reasoning Merge. The Reasoning Merge happens in a workspace where the Master Document and the Forked Branch are compared and analyzed side-by-side. In the bottom you find a chat interface — a portal to two distinct minds that you, the project owner, can interact with to determine the most meaningful synthesis.`,
+    `Behind the scenes, AI agents act as a proxy for two separate histories: Mind A (The Master) — the embodiment of the current document's memory, holding every piece of evidence and reasoning used to build the existing version. Mind B (The Branch) — holding the specific research, new logic, and breakthroughs that justify the proposed changes.`,
+    `When you open the Merge Workspace, an Assembler sits as a "Synthesis Layer" within the chat. You don't just talk to Mind A or Mind B; you ask the Assembler to map the terrain. "Assembler, where is the friction?" — it highlights the specific sentences where the two reasoning chains fundamentally disagree.`,
+    `This process transforms the merge into a high-fidelity exploration of the "Why." You can challenge new research, defend the original logic, or discover a third, superior path that neither side had seen in isolation. The merge only occurs once the reasoning "compiles" — meaning the new text and its underlying logic are fully reconciled and integrated into the master graph.`
+  ];
+
+  const DEFAULTS = {
+    0: { status: 'unchanged', text: ORIG[0] },
+    1: { status: 'accepted', text: `When a collaborator proposes a change, they initiate a Reasoning Merge — not merely a text update, but a structured handoff of the complete reasoning environment. The Merge Workspace places Master and Fork side-by-side, with a live chat interface anchored below: a direct portal to two cognitive histories operating in parallel. As project owner, you don't just review text — you interrogate the reasoning that produced it.` },
+    2: { status: 'unchanged', text: ORIG[2] },
+    3: { status: 'pending', text: `The Assembler operates as a "Synthesis Layer" — a third intelligence that transcends both Mind A and Mind B. It doesn't favor either side. When you ask "Where is the friction?", it maps the exact semantic fault lines where the two reasoning chains diverge, then offers Draft C: a synthesis that satisfies both without compromising either.` },
+    4: { status: 'unchanged', text: ORIG[4] }
+  };
+
+  const LS_KEY = 'gitmind_collab_v1';
+  let state = JSON.parse(localStorage.getItem(LS_KEY) || 'null') || JSON.parse(JSON.stringify(DEFAULTS));
+
+  function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+
+  // ── RENDER FORK ──
+
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function renderFork(i) {
+    const s = state[i];
+    const labels = { unchanged: 'Unchanged', accepted: 'Accepted', pending: 'Pending · Review', editing: 'Editing' };
+
+    let actions = '';
+    if (s.status === 'unchanged') {
+      actions = `<div class="para-actions"><button class="btn-sm btn-edit" onclick="startEdit(${i})">Propose Improvement</button></div>`;
+    } else if (s.status === 'pending') {
+      actions = `<div class="para-actions">
+        <button class="btn-sm btn-accept" onclick="acceptPara(${i})">Accept</button>
+        <button class="btn-sm btn-discard" onclick="revertPara(${i})">Discard</button>
+      </div>`;
+    } else if (s.status === 'accepted') {
+      actions = `<div class="para-actions"><button class="btn-sm btn-discard" onclick="revertPara(${i})">Revert</button></div>`;
+    } else if (s.status === 'editing') {
+      actions = `<div class="para-actions">
+        <button class="btn-sm btn-commit" onclick="commitEdit(${i})">Commit Improvement</button>
+        <button class="btn-sm btn-discard" onclick="cancelEdit(${i})">Cancel</button>
+      </div>`;
+    }
+
+    const bodyHtml = s.status === 'editing'
+      ? `<textarea class="para-textarea" id="ta${i}" rows="4">${esc(s.text)}</textarea>`
+      : `<span class="para-text">${esc(s.text)}</span>`;
+
+    const el = getOrCreate(i);
+    el.className = `para ${s.status}`;
+    el.innerHTML = `
+      <span class="para-num">P${i+1}</span>
+      <span class="state-tag">${labels[s.status] || s.status}</span>
+      ${bodyHtml}
+      ${actions}
+    `;
+
+    if (s.status === 'editing') {
+      const ta = document.getElementById('ta' + i);
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+      ta.focus();
+      ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; });
+    }
+  }
+
+  function getOrCreate(i) {
+    let el = document.getElementById('f' + i);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'f' + i;
+      el.dataset.i = i;
+      document.getElementById('forkDoc').appendChild(el);
+    }
+    return el;
+  }
+
+  function renderAll() {
+    for (let i = 0; i < 5; i++) renderFork(i);
+    updateStats();
+  }
+
+  // ── PARA ACTIONS ──
+
+  let activeM = null;
+
+  function activatePara(i) {
+    // Highlight master
+    document.querySelectorAll('.master .para').forEach(el => el.classList.remove('active'));
+    document.getElementById('m' + i)?.classList.add('active');
+    // Scroll fork
+    document.getElementById('f' + i)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    activeM = i;
+    if (state[i].status === 'unchanged') startEdit(i);
+  }
+
+  function startEdit(i) {
+    // Cancel any other edit
+    for (let j = 0; j < 5; j++) {
+      if (j !== i && state[j].status === 'editing') cancelEdit(j);
+    }
+    state[i].status = 'editing';
+    renderFork(i);
+  }
+
+  function cancelEdit(i) {
+    const orig = JSON.parse(JSON.stringify(DEFAULTS))[i];
+    const prevStatus = JSON.parse(localStorage.getItem(LS_KEY) || 'null')?.[i]?.status || 'unchanged';
+    state[i].status = prevStatus === 'editing' ? 'unchanged' : prevStatus;
+    state[i].text = ORIG[i];
+    // Restore from saved if exists
+    const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+    if (saved && saved[i] && saved[i].status !== 'editing') {
+      state[i] = saved[i];
+    } else {
+      state[i] = { status: 'unchanged', text: ORIG[i] };
+    }
+    renderFork(i);
+    updateStats();
+  }
+
+  function commitEdit(i) {
+    const ta = document.getElementById('ta' + i);
+    if (!ta) return;
+    const newText = ta.value.trim();
+    if (!newText || newText === ORIG[i]) {
+      showToast('No changes from original', 'err');
+      return;
+    }
+    state[i] = { status: 'pending', text: newText };
+    save();
+    renderFork(i);
+    updateStats();
+    showToast('Improvement saved');
+    addMsg('assembler', `Registered your improvement to Paragraph ${i+1}. I'll flag this in the Pending review queue. The key shift: you've ${wordDiff(ORIG[i], newText)}. Mark as Accept once you're satisfied.`);
+  }
+
+  function acceptPara(i) {
+    state[i].status = 'accepted';
+    save();
+    renderFork(i);
+    updateStats();
+    showToast('Improvement accepted');
+  }
+
+  function revertPara(i) {
+    state[i] = { status: 'unchanged', text: ORIG[i] };
+    save();
+    renderFork(i);
+    updateStats();
+    showToast('Paragraph reverted');
+  }
+
+  // ── STATS ──
+
+  function updateStats() {
+    let a = 0, p = 0, u = 0;
+    for (let i = 0; i < 5; i++) {
+      const st = state[i].status;
+      if (st === 'accepted') a++;
+      else if (st === 'pending') p++;
+      else u++;
+    }
+    document.getElementById('cntAccepted').textContent  = `${a} accepted`;
+    document.getElementById('cntPending').textContent   = `${p} pending`;
+    document.getElementById('cntUnchanged').textContent = `${u} unchanged`;
+    document.getElementById('navStatus').textContent = `${a+p} improvement${a+p!==1?'s':''} · ${p} pending`;
+  }
+
+  // ── MASTER CLICK ──
+
+  document.querySelectorAll('.master .para').forEach(el => {
+    el.addEventListener('click', () => activatePara(parseInt(el.dataset.i)));
+  });
+
+  // ── TABS ──
+
+  document.querySelectorAll('.ptab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tcontent').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab)?.classList.add('active');
+    });
+  });
+
+  // ── MIND SELECTOR ──
+
+  document.querySelectorAll('.mbtn').forEach(btn => {
+    btn.addEventListener('click', () => switchMind(btn.dataset.mind));
+  });
+
+  function switchMind(mind) {
+    document.querySelectorAll('.mbtn').forEach(b => b.classList.toggle('active', b.dataset.mind === mind));
+    // Switch to chat tab
+    document.querySelectorAll('.ptab').forEach(b => b.classList.toggle('active', b.dataset.tab === 'chat'));
+    document.querySelectorAll('.tcontent').forEach(c => c.classList.toggle('active', c.id === 'tab-chat'));
+    // Update placeholder
+    const ph = {
+      assembler: "Ask the Assembler — 'Where is the friction?', 'Draft a synthesis for P4'…",
+      'mind-a':  "Ask Mind A (Chef) — 'Why this phrasing?', 'What evidence anchors P3?'…",
+      'mind-b':  "Ask Mind B (Fork) — 'What drove your improvement?', 'Explain the shift in P2'…"
+    };
+    document.getElementById('chatInput').placeholder = ph[mind] || ph.assembler;
+  }
+
+  // ── CHAT ──
+
+  const RESPONSES = {
+    assembler: [
+      q => `Analyzing both reasoning chains… The friction in your query centers on the difference between <em>what the text says</em> and <em>why it says it</em>. Mind A's anchor here traces to a core session insight: "collaboration without shared context is just coordination." Your fork addresses this with greater precision. I'd recommend absorbing your phrasing while preserving Mind A's architectural framing.`,
+      q => `Gap analysis: the primary semantic fault line is between "comparison" (Mind A) and "handoff" (your fork). Mind A built this metaphor to emphasize simultaneity — both branches visible at once. Your "handoff" metaphor emphasizes transfer and completeness. Both are valid; your phrasing is more precise for the product reality. Draft C could read: "The Workspace holds both histories simultaneously — making the handoff visible, not just possible."`,
+      q => `Draft synthesis for "${q.slice(0,28)}…": absorb Mind B's precision, preserve Mind A's architectural framing. Lead with the "what" of Mind A, close with the "how" of Mind B. The merge compiles when the new text and its underlying logic are both reconciled into the master graph.`,
+    ],
+    'mind-a': [
+      q => `The original phrasing emerged from a specific concern: that readers would interpret the Merge Workspace as a passive diff tool. The word "portal" was deliberate — it implies you can <em>enter</em> the reasoning, not just observe it. This distinction is architecturally load-bearing for the rest of the argument.`,
+      q => `The evidence anchoring this paragraph traces to the session on "Transition Tax." The core finding: knowledge doesn't fail to transfer because people are bad at explaining. It fails because there's no infrastructure for context. This paragraph establishes that infrastructure as the subject of the product — not as a feature.`,
+    ],
+    'mind-b': [
+      q => `The improvement to P2 came from a realization mid-session: the original text described the workspace but not the <em>act of collaboration</em>. "Handoff of the complete reasoning environment" captures the mechanism — what actually passes between people. That was the key semantic shift that made the paragraph more precise.`,
+      q => `"Draft C" as a term came from the analogy with legal and technical negotiation, where the synthesis document is literally called Draft C. The Assembler's value isn't in being neutral — it's in being meta. It operates above the two reasoning chains, which is why "third intelligence" is more accurate than "moderator."`,
+    ],
+  };
+
+  const rIdx = { assembler: 0, 'mind-a': 0, 'mind-b': 0 };
+
+  function addMsg(role, html) {
+    const msgs = document.getElementById('chatMsgs');
+    const names = { assembler: 'Assembler', 'mind-a': 'Mind A — Chef', 'mind-b': 'Mind B — Fork', user: 'You' };
+    const initials = { assembler: 'AS', 'mind-a': 'MA', 'mind-b': 'MB', user: 'You' };
+    const div = document.createElement('div');
+    div.className = 'msg';
+    div.innerHTML = `
+      <div class="avatar ${role}">${initials[role]}</div>
+      <div class="msg-body">
+        <div class="msg-sender ${role}">${names[role]}</div>
+        <div class="msg-text">${html}</div>
+      </div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function sendMsg() {
+    const input = document.getElementById('chatInput');
+    const q = input.value.trim();
+    if (!q) return;
+    const mind = document.querySelector('.mbtn.active')?.dataset.mind || 'assembler';
+    addMsg('user', esc(q));
+    input.value = '';
+    const typing = document.getElementById('typing');
+    typing.classList.add('visible');
+    document.getElementById('chatMsgs').scrollTop = 99999;
+    setTimeout(() => {
+      typing.classList.remove('visible');
+      const pool = RESPONSES[mind] || RESPONSES.assembler;
+      const fn = pool[rIdx[mind] % pool.length];
+      rIdx[mind]++;
+      addMsg(mind, fn(q));
+    }, 1100 + Math.random() * 700);
+  }
+
+  document.getElementById('btnSend').addEventListener('click', sendMsg);
+  document.getElementById('chatInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+  });
+
+  // ── MERGE BUTTON ──
+
+  document.getElementById('btnMerge').addEventListener('click', () => {
+    let a = 0, p = 0;
+    for (let i = 0; i < 5; i++) {
+      if (state[i].status === 'accepted') a++;
+      if (state[i].status === 'pending') p++;
+    }
+    if (p > 0) {
+      showToast(`Resolve ${p} pending improvement${p>1?'s':''} first`, 'err'); return;
+    }
+    if (a === 0) {
+      showToast('No accepted improvements to merge', 'err'); return;
+    }
+    showToast(`Merge proposed — ${a} improvement${a>1?'s':''} submitted`);
+    addMsg('assembler', `Merge proposal submitted with ${a} accepted improvement${a>1?'s':''}. The reasoning environment has been packaged. The Chef will interrogate the logic before accepting — they can ask me to explain any divergence from the original text.`);
+  });
+
+  // ── TOAST ──
+
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + (type === 'err' ? 'err' : 'ok') + ' show';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  // ── UTILS ──
+
+  function wordDiff(a, b) {
+    const d = b.split(' ').length - a.split(' ').length;
+    if (d > 5)  return `expanded the argument (+${d} words)`;
+    if (d < -5) return `tightened the argument (${d} words)`;
+    return `reframed the core mechanism with similar density`;
+  }
+
+  // ── INIT ──
+  renderAll();
+</script>
+</body>
+</html>
